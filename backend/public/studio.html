@@ -181,16 +181,17 @@
 
   <div class="panel-col">
 
-    <!-- STAGE 1: VOICE (now first — record before or after story) -->
+    <!-- STAGE 1: VOICE -->
     <div class="card" id="stage1">
-      <h2>Record your voice</h2>
-      <p class="hint">Start here — record yourself reading a story, an idea, anything. Or use AI voice after you generate the story in step 2.</p>
+      <h2>Record or generate your voice</h2>
+      <p class="hint">Start here — record yourself reading a story, or generate high-quality speech using AI voice after generating your script in step 2.</p>
       <div class="method-toggle">
         <button class="method-btn selected" id="btnMethodMic">● Record my voice</button>
-        <button class="method-btn" id="btnMethodBrowser">Browser AI voice</button>
+        <button class="method-btn" id="btnMethodAI">AI voice (Groq PlayAI)</button>
+        <button class="method-btn" id="btnMethodBrowser">Browser voice</button>
       </div>
 
-      <!-- Mic recording — shown first / default -->
+      <!-- Mic recording -->
       <div class="method-panel show" id="panelMic">
         <p class="hint">Hit record, read anything aloud — your story, an idea, or freeform. You can generate the script in step 2 after.</p>
         <div class="actions">
@@ -198,6 +199,24 @@
           <button id="btnStopMic" disabled>■ Stop</button>
           <span class="rec-indicator" id="recIndicatorMic"><span class="rec-dot"></span><span id="micTimer">0:00</span></span>
           <span class="status" id="statusMic"></span>
+        </div>
+      </div>
+
+      <!-- Groq AI Voice TTS -->
+      <div class="method-panel" id="panelAI">
+        <p class="hint">Uses Groq PlayAI Text-to-Speech via /api/tts to produce expressive audio directly.</p>
+        <div class="row">
+          <div>
+            <label class="field-label">Voice Model / Accent</label>
+            <select id="groqVoice">
+              <option value="PlayDialog-English" selected>PlayDialog - English (Natural)</option>
+              <option value="PlayDialog-Storyteller">PlayDialog - Storyteller</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="btnGenerateGroqVoice">Generate AI Voice</button>
+          <span class="status" id="statusGroqVoice"></span>
         </div>
       </div>
 
@@ -226,7 +245,7 @@
       <audio id="voicePlayer" controls style="display:none;"></audio>
     </div>
 
-    <!-- STAGE 2: STORY (now second — write or generate after recording) -->
+    <!-- STAGE 2: STORY -->
     <div class="card" id="stage2">
       <h2>Write or generate the story</h2>
       <p class="hint">Already recorded? Skip this. Or write a prompt and let AI write the full script — then go back to step 1 to read it aloud or use AI voice.</p>
@@ -340,14 +359,14 @@
 
   const state = {
     story: '',
-    narrationBuffer: null,   // captured/recorded voice, AudioBuffer
-    soundscapeBuffer: null,  // decoded ambience loop, AudioBuffer
+    narrationBuffer: null,   // captured/recorded/AI voice AudioBuffer
+    soundscapeBuffer: null,  // decoded ambience loop AudioBuffer
     soundscapeGainVal: 0.14,
-    mixedBuffer: null,       // narration + soundscape, final export source
+    mixedBuffer: null,       // narration + soundscape export source
     coverImageEl: null,
   };
 
-  // ---------- STEPPER (visual only, cosmetic nav) ----------
+  // ---------- STEPPER NAV ----------
   document.querySelectorAll('.step').forEach(s => {
     s.addEventListener('click', () => {
       const target = $(s.dataset.target);
@@ -379,7 +398,7 @@
     setTimeout(()=>layer.remove(), 1200);
   }
 
-  // ---------- STAGE 1: STORY (server-side Groq via /api/generate-story) ----------
+  // ---------- STAGE 2: STORY ----------
   async function generateStoryText(systemPrompt, userPrompt){
     const res = await fetch('/api/generate-story', {
       method: 'POST',
@@ -408,7 +427,7 @@
         draft.id = 'storyDraft';
         draft.style.marginTop = '14px';
         draft.style.minHeight = '220px';
-        $('stage1').insertBefore(draft, $('stage1').querySelector('.actions'));
+        $('stage2').insertBefore(draft, $('stage2').querySelector('.actions'));
       }
       draft.value = text;
       draft.oninput = () => { state.story = draft.value; };
@@ -425,29 +444,52 @@
     }
   });
 
-  // ---------- STAGE 2: VOICE ----------
-  function chunkText(text, maxLen) {
-    const sentences = text.replace(/\s+/g,' ').trim().split(/(?<=[.!?।॥])\s+/);
-    const chunks = []; let cur = '';
-    for (const s of sentences) {
-      if ((cur + ' ' + s).trim().length > maxLen) { if (cur) chunks.push(cur.trim()); cur = s; }
-      else cur = (cur + ' ' + s).trim();
-    }
-    if (cur) chunks.push(cur.trim());
-    return chunks;
-  }
-
-  // method toggle — Mic is default (selected in HTML)
+  // ---------- STAGE 1: VOICE SELECTION ----------
   function selectVoiceMethod(method) {
-    ['Mic','Browser'].forEach(m => {
-    $('btnMethod'+m).classList.toggle('selected', m === method);
-    $('panel'+m).classList.toggle('show', m === method);
-  });
+    ['Mic','AI','Browser'].forEach(m => {
+      $('btnMethod'+m).classList.toggle('selected', m === method);
+      $('panel'+m).classList.toggle('show', m === method);
+    });
   }
   $('btnMethodMic').addEventListener('click', () => selectVoiceMethod('Mic'));
+  $('btnMethodAI').addEventListener('click', () => selectVoiceMethod('AI'));
   $('btnMethodBrowser').addEventListener('click', () => selectVoiceMethod('Browser'));
 
-  // populate browser voices, prefer "Natural"/neural voices (Edge exposes Microsoft's free neural voices this way)
+  // --- Groq PlayAI TTS Handler ---
+  $('btnGenerateGroqVoice').addEventListener('click', async () => {
+    const draft = $('storyDraft');
+    const text = (draft ? draft.value : state.story).trim();
+    if (!text) return setStatus($('statusGroqVoice'), 'Generate or write a story first in step 2.', 'err');
+
+    setStatus($('statusGroqVoice'), 'Generating AI Voice via Groq...', '');
+    $('btnGenerateGroqVoice').disabled = true;
+
+    try {
+      const voice = $('groqVoice').value;
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `TTS API Error: ${res.statusText}`);
+      }
+
+      // Read raw WAV bytes directly from response arrayBuffer
+      const audioBuffer = await res.arrayBuffer();
+      const decoded = await audioCtx.decodeAudioData(audioBuffer);
+      state.narrationBuffer = decoded;
+      finishVoiceCapture(decoded, $('statusGroqVoice'));
+    } catch (e) {
+      setStatus($('statusGroqVoice'), e.message, 'err');
+    } finally {
+      $('btnGenerateGroqVoice').disabled = false;
+    }
+  });
+
+  // --- Browser Speech Handler ---
   function populateVoices(){
     const voices = speechSynthesis.getVoices();
     if (!voices.length) return;
@@ -464,6 +506,17 @@
   speechSynthesis.onvoiceschanged = populateVoices;
   populateVoices();
   setTimeout(populateVoices, 500);
+
+  function chunkText(text, maxLen) {
+    const sentences = text.replace(/\s+/g,' ').trim().split(/(?<=[.!?।॥])\s+/);
+    const chunks = []; let cur = '';
+    for (const s of sentences) {
+      if ((cur + ' ' + s).trim().length > maxLen) { if (cur) chunks.push(cur.trim()); cur = s; }
+      else cur = (cur + ' ' + s).trim();
+    }
+    if (cur) chunks.push(cur.trim());
+    return chunks;
+  }
 
   function buildUtterances(text, rate){
     const chunks = chunkText(text, 220);
@@ -497,7 +550,7 @@
         display.getTracks().forEach(t=>t.stop());
         return setStatus($('statusTtsCapture'), 'No tab audio was shared — retry and check "Share tab audio".', 'err');
       }
-      display.getVideoTracks().forEach(t => t.stop()); // don't need video
+      display.getVideoTracks().forEach(t => t.stop());
       const audioOnlyStream = new MediaStream(audioTracks);
       const recorder = new MediaRecorder(audioOnlyStream);
       const chunks = [];
@@ -513,7 +566,7 @@
         utts.forEach((u,i) => { if (i === utts.length-1) u.onend = resolve; });
         utts.forEach(u => speechSynthesis.speak(u));
       });
-      await new Promise(r => setTimeout(r, 400)); // tail buffer
+      await new Promise(r => setTimeout(r, 400));
       recorder.stop();
       audioTracks.forEach(t => t.stop());
 
@@ -529,7 +582,7 @@
     }
   });
 
-  // mic recording
+  // --- Mic Recording Handler ---
   let micRecorder, micChunks = [], micStream, micTimerInt, micSeconds = 0;
   $('btnRecordMic').addEventListener('click', async () => {
     try {
@@ -565,6 +618,7 @@
     state.narrationBuffer = decoded;
     finishVoiceCapture(decoded, $('statusMic'));
   });
+
   function finishVoiceCapture(buffer, statusEl){
     const wavBlob = audioBufferToWavBlob(buffer);
     $('voicePlayer').src = URL.createObjectURL(wavBlob);
@@ -596,7 +650,7 @@
     return new Blob([bufferArr], { type: 'audio/wav' });
   }
 
-  // ---------- STAGE 3: SOUNDSCAPE (real recordings, Wikimedia Commons) ----------
+  // ---------- STAGE 3: SOUNDSCAPE ----------
   const SOUNDSCAPES = {
     rain:   'Rainthunderandbirds.ogg',
     forest: 'Birds forest.ogg',
@@ -625,7 +679,7 @@
     }
   });
 
-  // ---------- STAGE 4: COVER ART (Pollinations image, free, no key) ----------
+  // ---------- STAGE 4: COVER ART ----------
   $('btnCover').addEventListener('click', async () => {
     const prompt = $('coverPrompt').value.trim();
     if (!prompt) return setStatus($('statusCover'), 'Add a cover description.', 'err');
@@ -656,7 +710,7 @@
     const outData = out.getChannelData(0);
     const nData = narrationBuf.getChannelData(0);
     const aData = ambienceBuf ? ambienceBuf.getChannelData(0) : null;
-    const fadeLen = Math.min(sr*1.5, len/2); // 1.5s fade in/out on the ambience bed
+    const fadeLen = Math.min(sr*1.5, len/2);
     for (let i=0;i<len;i++){
       let s = nData[i];
       if (aData && aData.length) {
@@ -771,7 +825,7 @@
     if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, {type: mime})] })) {
       try {
         await navigator.share({ files: [new File([blob], filename, {type: mime})], title: 'Audigram story', text: 'Made with Audigram by SHANKH' });
-      } catch(e) { /* user cancelled share sheet — no error needed */ }
+      } catch(e) { /* user cancelled share sheet */ }
     } else {
       alert('Your browser doesn\'t support direct sharing here — use "Save to phone" and share it from your gallery/files app instead.');
     }
