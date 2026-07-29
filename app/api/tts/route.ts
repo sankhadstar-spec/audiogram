@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-function createSineWavBuffer(text: string): Buffer {
+function createSineWavBuffer(text: string): Uint8Array {
   const sampleRate = 22050;
   const duration = Math.min(Math.max(text.length * 0.08, 1.5), 6.0);
   const numSamples = Math.floor(sampleRate * duration);
@@ -29,7 +29,8 @@ function createSineWavBuffer(text: string): Buffer {
     buffer.writeInt16LE(sample, 44 + i * 2);
   }
 
-  return buffer;
+  // Create a clean, standard Uint8Array copy compatible with DOM BodyInit
+  return new Uint8Array(buffer);
 }
 
 export async function POST(req: Request) {
@@ -61,14 +62,14 @@ export async function POST(req: Request) {
       }
     }
 
-    const wavBuffer = createSineWavBuffer(text);
-    return new Response(new Blob([wavBuffer]), {
+    const wavBytes = createSineWavBuffer(text);
+    return new Response(wavBytes as BodyInit, {
       status: 200,
       headers: { 'Content-Type': 'audio/wav' }
     });
   } catch (error) {
-    const wavBuffer = createSineWavBuffer("Playback fallback activated.");
-    return new Response(new Blob([wavBuffer]), {
+    const wavBytes = createSineWavBuffer("Playback fallback activated.");
+    return new Response(wavBytes as BodyInit, {
       status: 200,
       headers: { 'Content-Type': 'audio/wav' }
     });
