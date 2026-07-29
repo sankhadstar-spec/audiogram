@@ -1,5 +1,19 @@
 {
+  "name": "audiogram",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Audiogram — Audio stories for the next generation of creators",
+  "scripts": {
+    "dev": "cd backend && npm run dev",
+    "build": "cd backend && npm run build",
+    "start": "cd backend && npm start",
+    "deploy": "cd backend && vercel --prod"
+  },
   "dependencies": {
     "@google/genai": "^2.14.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
   }
 }

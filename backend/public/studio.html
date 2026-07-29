@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audigram by SHANKH</title>
+<title>Audigram Studio by SHANKH</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -18,6 +18,8 @@
     --red-dim: #7a1414;
     --blue: #3ea6ff;
     --green: #3dd598;
+    --yellow: #ffd27a;
+    --purple: #c084fc;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -79,7 +81,7 @@
   .card.locked{opacity:.35;pointer-events:none;}
   .card h2{font-size:18px;margin:0 0 6px;font-weight:700;}
   .card .hint{font-size:12.5px;color:var(--text-dim);margin:0 0 16px;line-height:1.55;}
-  .card .hint.warn{color:#ffd27a;}
+  .card .hint.warn{color:var(--yellow);}
 
   textarea, select, input[type=text], input[type=range]{
     width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;
@@ -112,6 +114,9 @@
   button.primary:hover:not(:disabled){background:#e60000;}
   button:disabled{opacity:.4;cursor:not-allowed;}
   button.ghost{background:transparent;}
+  button.green-btn{background:var(--green);border-color:var(--green);color:#0f0f0f;}
+  button.blue-btn{background:var(--blue);border-color:var(--blue);color:#0f0f0f;}
+  button.purple-btn{background:var(--purple);border-color:var(--purple);color:#0f0f0f;}
 
   .actions{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
   .status{font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-dim);}
@@ -138,8 +143,56 @@
   a.dl{
     display:inline-block;font-size:12.5px;font-weight:700;color:#fff;background:var(--panel);
     border:1px solid var(--border);text-decoration:none;padding:8px 14px;border-radius:18px;
+    cursor:pointer;
   }
+  a.dl:hover{background:var(--border);}
   progress{width:100%;height:6px;accent-color:var(--red);margin-top:10px;}
+
+  /* word count + meta badges */
+  .story-meta{
+    display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;
+  }
+  .meta-badge{
+    font-family:'Roboto Mono',monospace;font-size:11px;color:var(--text-dim);
+    border:1px solid var(--border);border-radius:12px;padding:4px 10px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .meta-badge .dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+  .meta-badge .dot.green{background:var(--green);}
+  .meta-badge .dot.blue{background:var(--blue);}
+  .meta-badge .dot.yellow{background:var(--yellow);}
+
+  /* share & export section */
+  .share-export-section{
+    margin-top:16px;
+  }
+  .share-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px;
+  }
+  .share-card{
+    border:1px solid var(--border);border-radius:10px;padding:12px;
+    background:var(--panel-2);cursor:pointer;transition:all .15s ease;
+    display:flex;align-items:center;gap:10px;
+  }
+  .share-card:hover{border-color:var(--blue);background:var(--panel);}
+  .share-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center;}
+  .share-label{font-size:13px;font-weight:500;line-height:1.3;}
+  .share-sub{font-size:11px;color:var(--text-dim);}
+
+  /* audio progress bar */
+  .audio-progress-wrap{
+    width:100%;margin-top:10px;
+  }
+  .audio-progress{
+    width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden;
+  }
+  .audio-progress-fill{
+    height:100%;background:var(--red);width:0%;transition:width .1s linear;
+  }
+  .audio-time-row{
+    display:flex;justify-content:space-between;margin-top:4px;
+    font-family:'Roboto Mono',monospace;font-size:11px;color:var(--text-dim);
+  }
 
   .burst{position:fixed;inset:0;pointer-events:none;z-index:99;}
   .burst span{
@@ -156,6 +209,8 @@
     .studio{flex-direction:column;}
     .stepper{width:100%;position:static;display:flex;overflow-x:auto;gap:6px;}
     .step{flex-shrink:0;}
+    .share-grid{grid-template-columns:1fr 1fr;}
+    .output-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -166,63 +221,86 @@
   <div class="wordmark">Audi<span>gram</span></div>
   <div class="by-line">by SHANKH</div>
   <div class="topbar-spacer"></div>
-  <div class="pill-badge" id="pipelineBadge">Powered by Audigram — no keys needed</div>
+  <div class="pill-badge" id="pipelineBadge">Free by default · optional free-tier keys for best quality</div>
 </div>
 
 <div class="studio">
 
   <div class="stepper" id="stepper">
-    <div class="step active" data-target="stage1"><div class="num">1</div>Voice</div>
-    <div class="step" data-target="stage2"><div class="num">2</div>Story</div>
+    <div class="step active" data-target="stage1"><div class="num">1</div>Story</div>
+    <div class="step" data-target="stage2"><div class="num">2</div>Voice</div>
     <div class="step" data-target="stage3"><div class="num">3</div>Soundscape</div>
     <div class="step" data-target="stage4"><div class="num">4</div>Cover art</div>
-    <div class="step" data-target="stage5"><div class="num">5</div>Publish</div>
+    <div class="step" data-target="stage5"><div class="num">5</div>Export &amp; Share</div>
   </div>
 
   <div class="panel-col">
 
-    <!-- STAGE 1: VOICE -->
+    <!-- STAGE 1: STORY -->
     <div class="card" id="stage1">
-      <h2>Record or generate your voice</h2>
-      <p class="hint">Start here — record yourself reading a story, or generate high-quality speech using AI voice after generating your script in step 2.</p>
+      <h2>Write the story</h2>
+      <p class="hint">Uses Gemini 2.5 Flash (free tier) by default via server API. For even higher quality, add a Groq or OpenRouter key below. Every prompt produces a completely unique, long-form narrative — no repeated templates.</p>
+
       <div class="method-toggle">
-        <button class="method-btn selected" id="btnMethodMic">● Record my voice</button>
-        <button class="method-btn" id="btnMethodAI">AI voice (Groq PlayAI)</button>
-        <button class="method-btn" id="btnMethodBrowser">Browser voice</button>
+        <button class="method-btn selected" id="btnStoryFree">Free &amp; instant</button>
+        <button class="method-btn" id="btnStoryBest">Best quality (Groq — free key)</button>
+      </div>
+      <div id="groqKeyRow" style="display:none;margin-bottom:14px;">
+        <label class="field-label">Groq API key</label>
+        <input type="text" id="groqKey" placeholder="gsk_... — free, no card, at console.groq.com">
       </div>
 
-      <!-- Mic recording -->
-      <div class="method-panel show" id="panelMic">
-        <p class="hint">Hit record, read anything aloud — your story, an idea, or freeform. You can generate the script in step 2 after.</p>
-        <div class="actions">
-          <button class="primary" id="btnRecordMic">● Start recording</button>
-          <button id="btnStopMic" disabled>■ Stop</button>
-          <span class="rec-indicator" id="recIndicatorMic"><span class="rec-dot"></span><span id="micTimer">0:00</span></span>
-          <span class="status" id="statusMic"></span>
-        </div>
+      <textarea id="promptInput">A boy in a Kolkata neighbourhood discovers his grandfather's old radio still picks up a station that stopped broadcasting decades ago.</textarea>
+
+      <div class="row">
+        <select id="genre">
+          <option value="atmospheric literary fiction">Atmospheric fiction</option>
+          <option value="folk tale">Folk tale</option>
+          <option value="horror / suspense">Horror / suspense</option>
+          <option value="children's story">Children's story</option>
+          <option value="true-crime style narration">True-crime narration</option>
+          <option value="motivational monologue">Motivational monologue</option>
+        </select>
+        <select id="length">
+          <option value="short (roughly 150-200 words)">Short (~2 min)</option>
+          <option value="medium (roughly 350-450 words)" selected>Medium (~4-5 min)</option>
+          <option value="long (roughly 700-900 words)">Long (~9-10 min)</option>
+        </select>
+        <select id="language">
+          <option value="English" selected>English</option>
+          <option value="Bengali">Bengali</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Marathi">Marathi</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="German">German</option>
+          <option value="Japanese">Japanese</option>
+        </select>
       </div>
 
-      <!-- Groq AI Voice TTS -->
-      <div class="method-panel" id="panelAI">
-        <p class="hint">Uses Groq PlayAI Text-to-Speech via /api/tts to produce expressive audio directly.</p>
-        <div class="row">
-          <div>
-            <label class="field-label">Voice Model / Accent</label>
-            <select id="groqVoice">
-              <option value="PlayDialog-English" selected>PlayDialog - English (Natural)</option>
-              <option value="PlayDialog-Storyteller">PlayDialog - Storyteller</option>
-            </select>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="primary" id="btnGenerateGroqVoice">Generate AI Voice</button>
-          <span class="status" id="statusGroqVoice"></span>
-        </div>
+      <div class="actions">
+        <button class="primary" id="btnStory">Generate story</button>
+        <span class="status" id="statusStory"></span>
+      </div>
+    </div>
+
+    <!-- STAGE 2: VOICE -->
+    <div class="card locked" id="stage2">
+      <h2>Give it a voice</h2>
+      <p class="hint">Three options: Browser natural voice (free, built-in), record your own voice, or use the server-side AI TTS (Groq/Edge/OpenAI fallback chain).</p>
+
+      <div class="method-toggle">
+        <button class="method-btn selected" id="btnMethodBrowser">Browser natural voice</button>
+        <button class="method-btn" id="btnMethodMic">Record my own voice</button>
+        <button class="method-btn" id="btnMethodServer">AI Voice (server TTS)</button>
       </div>
 
       <!-- Browser TTS -->
-      <div class="method-panel" id="panelBrowser">
-        <p class="hint">Uses your browser's built-in speech voices. Generate the story in step 2 first, then come back here to capture it.</p>
+      <div class="method-panel show" id="panelBrowser">
+        <p class="hint">Uses your browser/OS's built-in speech voices — on Edge/Windows these include Microsoft's free neural "Natural" voices.</p>
         <div class="row">
           <select id="ttsVoice"><option>Loading voices…</option></select>
           <select id="ttsRate">
@@ -242,32 +320,34 @@
         </div>
       </div>
 
-      <audio id="voicePlayer" controls style="display:none;"></audio>
-    </div>
-
-    <!-- STAGE 2: STORY -->
-    <div class="card" id="stage2">
-      <h2>Write or generate the story</h2>
-      <p class="hint">Already recorded? Skip this. Or write a prompt and let AI write the full script — then go back to step 1 to read it aloud or use AI voice.</p>
-      <textarea id="promptInput">A boy in a Kolkata neighbourhood discovers his grandfather's old radio still picks up a station that stopped broadcasting decades ago.</textarea>
-      <div class="row">
-        <select id="genre">
-          <option value="atmospheric literary fiction">Atmospheric fiction</option>
-          <option value="folk tale">Folk tale</option>
-          <option value="horror / suspense">Horror / suspense</option>
-          <option value="children's story">Children's story</option>
-          <option value="true-crime style narration">True-crime narration</option>
-          <option value="motivational monologue">Motivational monologue</option>
-        </select>
-        <select id="length">
-          <option value="short (roughly 150-200 words)">Short (~2 min)</option>
-          <option value="medium (roughly 350-450 words)" selected>Medium (~4-5 min)</option>
-          <option value="long (roughly 700-900 words)">Long (~9-10 min)</option>
-        </select>
+      <!-- Mic recording -->
+      <div class="method-panel" id="panelMic">
+        <p class="hint">Read the story into your mic. Scroll the draft above while you record.</p>
+        <div class="actions">
+          <button class="primary" id="btnRecordMic">● Start recording</button>
+          <button id="btnStopMic" disabled>■ Stop</button>
+          <span class="rec-indicator" id="recIndicatorMic"><span class="rec-dot"></span><span id="micTimer">0:00</span></span>
+          <span class="status" id="statusMic"></span>
+        </div>
       </div>
-      <div class="actions">
-        <button class="primary" id="btnStory">Generate story</button>
-        <span class="status" id="statusStory"></span>
+
+      <!-- Server AI TTS -->
+      <div class="method-panel" id="panelServer">
+        <p class="hint">Generates audio via the /api/tts server endpoint with multi-tier fallback: Groq PlayAI → Edge TTS → OpenAI. Best quality for long stories.</p>
+        <div class="actions">
+          <button class="primary" id="btnServerTTS">Generate AI narration (server)</button>
+          <span class="status" id="statusServerTTS"></span>
+        </div>
+      </div>
+
+      <!-- Playback with progress bar -->
+      <audio id="voicePlayer" controls style="display:none;"></audio>
+      <div class="audio-progress-wrap" id="audioProgressWrap" style="display:none;">
+        <div class="audio-progress"><div class="audio-progress-fill" id="audioProgressFill"></div></div>
+        <div class="audio-time-row">
+          <span id="audioTimeCur">0:00</span>
+          <span id="audioTimeTotal">0:00</span>
+        </div>
       </div>
     </div>
 
@@ -310,31 +390,109 @@
       </div>
     </div>
 
-    <!-- STAGE 5: ASSEMBLE + PUBLISH -->
+    <!-- STAGE 5: EXPORT & SHARE -->
     <div class="card locked" id="stage5">
-      <h2>Render &amp; publish</h2>
-      <p class="hint">Everything renders in this tab. Once it's done, share it exactly like you'd share a YouTube video, or save it straight to your phone.</p>
+      <h2>Export &amp; share</h2>
+      <p class="hint">Download your story as PDF, export the final audio as MP3/WAV, and share to social platforms with one tap.</p>
+
+      <!-- Render progress -->
       <div class="actions">
         <button class="primary" id="btnAssemble">Render MP3 + video</button>
         <span class="status" id="statusAssemble"></span>
       </div>
       <progress id="renderProgress" value="0" max="1" style="display:none;"></progress>
 
-      <div class="output-grid" id="outputGrid" style="display:none;">
+      <!-- Export: PDF + Audio -->
+      <div class="output-grid" id="exportGrid" style="display:none;">
         <div class="output-card">
-          <h4>MP3 — audio story</h4>
-          <p>Narration + soundscape, tagged for podcast platforms.</p>
+          <h4>📄 Story PDF</h4>
+          <p>Save your generated story text as a formatted PDF document.</p>
           <div class="output-btns">
-            <a class="dl" id="dlMp3" download="audigram-story.mp3">Save to phone</a>
-            <button id="btnShareMp3">Share</button>
+            <button class="green-btn" id="btnDownloadPDF">Download Story (PDF)</button>
           </div>
         </div>
         <div class="output-card">
-          <h4 id="videoLabel">Video — for YouTube</h4>
+          <h4>🎵 Audio Story</h4>
+          <p>Download your final narration (with soundscape mix) as WAV or MP3.</p>
+          <div class="output-btns">
+            <a class="dl" id="dlWav" download="audigram-story.wav" style="display:none;">Save WAV</a>
+            <a class="dl" id="dlMp3" download="audigram-story.mp3" style="display:none;">Save MP3</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video output (hidden until rendered) -->
+      <div class="output-grid" id="outputGrid" style="display:none;">
+        <div class="output-card">
+          <h4>🎬 Video — for YouTube</h4>
           <p id="videoNote">Cover art with a slow zoom, synced to your mixed audio.</p>
           <div class="output-btns">
-            <a class="dl" id="dlVideo" download="audigram-story.mp4">Save to phone</a>
-            <button id="btnShareVideo">Share</button>
+            <a class="dl" id="dlVideo" download="audigram-story.mp4">Save video</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social & native sharing -->
+      <div class="share-export-section" id="shareSection" style="display:none;">
+        <h4 style="font-size:14px;font-weight:700;margin:20px 0 4px;">Share to platforms</h4>
+        <p class="hint" style="margin-bottom:8px;">One-tap sharing via native Web Share API (mobile) or direct links for each platform.</p>
+
+        <div class="share-grid">
+          <div class="share-card" id="shareNative">
+            <div class="share-icon">📲</div>
+            <div>
+              <div class="share-label">System Share</div>
+              <div class="share-sub">Native share sheet (mobile)</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareWhatsApp">
+            <div class="share-icon">💬</div>
+            <div>
+              <div class="share-label">WhatsApp</div>
+              <div class="share-sub">Direct message or status</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareTelegram">
+            <div class="share-icon">✈️</div>
+            <div>
+              <div class="share-label">Telegram</div>
+              <div class="share-sub">Send or post to channel</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareTwitter">
+            <div class="share-icon">𝕏</div>
+            <div>
+              <div class="share-label">X / Twitter</div>
+              <div class="share-sub">Post with audio link</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareYouTube">
+            <div class="share-icon">▶️</div>
+            <div>
+              <div class="share-label">YouTube</div>
+              <div class="share-sub">Long-form audio preset</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareReels">
+            <div class="share-icon">📱</div>
+            <div>
+              <div class="share-label">Reels / TikTok / Shorts</div>
+              <div class="share-sub">Vertical snippet preset</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareCopyLink">
+            <div class="share-icon">🔗</div>
+            <div>
+              <div class="share-label">Copy Link</div>
+              <div class="share-sub">Embed or direct link</div>
+            </div>
+          </div>
+          <div class="share-card" id="shareFile">
+            <div class="share-icon">📁</div>
+            <div>
+              <div class="share-label">Share Audio File</div>
+              <div class="share-sub">Send MP3 directly</div>
+            </div>
           </div>
         </div>
       </div>
@@ -343,30 +501,39 @@
   </div>
 </div>
 
-<footer>Audigram by SHANKH — Record · Story · Soundscape · Cover · Render. No keys needed.</footer>
+<footer>Audigram Studio by SHANKH — Story · Voice · Soundscape · Cover · Export · Share. One tab, zero servers, zero API keys.</footer>
 
 <canvas id="renderCanvas" width="1280" height="720"></canvas>
 
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<!-- lamejs for MP3 encoding -->
 <script src="https://unpkg.com/lamejs@1.2.1/lame.min.js"></script>
+
 <script>
 (function(){
   "use strict";
   const $ = id => document.getElementById(id);
-  const setStatus = (el, msg, cls) => { el.textContent = msg; el.className = 'status' + (cls ? ' '+cls : ''); };
+  const setStatus = (el, msg, cls) => { if(el){ el.textContent = msg; el.className = 'status' + (cls ? ' '+cls : ''); } };
   const unlock = el => el.classList.remove('locked');
 
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+  /* ── Global state ──────────────────────────────────────────── */
   const state = {
     story: '',
-    narrationBuffer: null,   // captured/recorded/AI voice AudioBuffer
-    soundscapeBuffer: null,  // decoded ambience loop AudioBuffer
+    storyProvider: '',
+    storyWordCount: 0,
+    storySeed: 0,
+    narrationBuffer: null,
+    narrationBlob: null,
+    soundscapeBuffer: null,
     soundscapeGainVal: 0.14,
-    mixedBuffer: null,       // narration + soundscape export source
+    mixedBuffer: null,
     coverImageEl: null,
   };
 
-  // ---------- STEPPER NAV ----------
+  /* ── Stepper nav ───────────────────────────────────────────── */
   document.querySelectorAll('.step').forEach(s => {
     s.addEventListener('click', () => {
       const target = $(s.dataset.target);
@@ -378,7 +545,7 @@
     document.querySelectorAll('.step').forEach((s,i)=>s.classList.toggle('active', i===n-1));
   }
 
-  // ---------- CONFETTI SURPRISE ----------
+  /* ── Confetti ──────────────────────────────────────────────── */
   function burstConfetti(){
     const layer = document.createElement('div');
     layer.className = 'burst';
@@ -398,28 +565,95 @@
     setTimeout(()=>layer.remove(), 1200);
   }
 
-  // ---------- STAGE 2: STORY ----------
-  async function generateStoryText(systemPrompt, userPrompt){
-    const res = await fetch('/api/generate-story', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ systemPrompt, userPrompt })
-    });
-    if (!res.ok) throw new Error((await res.json()).error || 'Story generation failed');
-    const data = await res.json();
-    return data.text;
+  /* ── Helpers ───────────────────────────────────────────────── */
+  function fmtTime(s){ return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'); }
+
+  function updateStoryMeta(text, provider, seed){
+    // Remove existing meta badges
+    const existing = $('stage1').querySelector('.story-meta');
+    if(existing) existing.remove();
+
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const charCount = text.length;
+    const readMin = Math.ceil(wordCount / 150);
+
+    const meta = document.createElement('div');
+    meta.className = 'story-meta';
+    meta.innerHTML =
+      `<span class="meta-badge"><span class="dot green"></span>${wordCount} words</span>` +
+      `<span class="meta-badge"><span class="dot blue"></span>${charCount} chars</span>` +
+      `<span class="meta-badge"><span class="dot yellow"></span>~${readMin} min read</span>` +
+      `<span class="meta-badge">via ${provider || 'server'}</span>`;
+
+    const draft = $('storyDraft');
+    if(draft) draft.parentNode.insertBefore(meta, draft.nextSibling);
+    else {
+      const actions = $('stage1').querySelector('.actions');
+      actions.parentNode.insertBefore(meta, actions);
+    }
+
+    state.storyWordCount = wordCount;
+    state.storyProvider = provider || '';
+    state.storySeed = seed || 0;
+  }
+
+  /* ── STAGE 1: STORY ────────────────────────────────────────── */
+  let storyMethod = 'free';
+  $('btnStoryFree').addEventListener('click', () => {
+    storyMethod = 'free';
+    $('btnStoryFree').classList.add('selected'); $('btnStoryBest').classList.remove('selected');
+    $('groqKeyRow').style.display = 'none';
+  });
+  $('btnStoryBest').addEventListener('click', () => {
+    storyMethod = 'best';
+    $('btnStoryBest').classList.add('selected'); $('btnStoryFree').classList.remove('selected');
+    $('groqKeyRow').style.display = 'block';
+  });
+
+  async function generateStoryText(prompt, genre, length, language){
+    if (storyMethod === 'best') {
+      const key = $('groqKey').value.trim();
+      if (!key) throw new Error('Add your Groq key, or switch back to Free & instant.');
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: `Write only the story text itself, meant to be read aloud by a narrator -- no title, no headers, no markdown, no stage directions, natural speakable sentences. Genre: ${genre}. Length: ${length}. Language: ${language}.` },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 1.0
+        })
+      });
+      if (!res.ok) throw new Error(`Groq error ${res.status}: ${(await res.text()).slice(0,180)}`);
+      const data = await res.json();
+      return { text: data.choices[0].message.content.trim(), provider: 'groq', seed: Date.now() };
+    } else {
+      // Use server-side API (Gemini → Pollinations → OpenRouter → local dynamic)
+      const res = await fetch('/api/generate-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, genre, length, language })
+      });
+      if (!res.ok) throw new Error(`Story service error ${res.status}. Try again.`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      return { text: data.text || data.story, provider: data.provider, seed: data.seed };
+    }
   }
 
   $('btnStory').addEventListener('click', async () => {
     const prompt = $('promptInput').value.trim();
     if (!prompt) return setStatus($('statusStory'), 'Write a prompt first.', 'err');
-    setStatus($('statusStory'), 'Generating story...', '');
+    setStatus($('statusStory'), storyMethod === 'best' ? 'Writing with Groq...' : 'Generating unique story...', '');
     $('btnStory').disabled = true;
     try {
       const genre = $('genre').value;
       const length = $('length').value;
-      const systemPrompt = `Write only the story text itself, meant to be read aloud by a narrator -- no title, no headers, no markdown, no stage directions, natural speakable sentences. Genre: ${genre}. Length: ${length}.`;
-      const text = await generateStoryText(systemPrompt, prompt);
+      const language = $('language').value;
+      const result = await generateStoryText(prompt, genre, length, language);
+      const text = result.text;
 
       let draft = $('storyDraft');
       if (!draft) {
@@ -427,16 +661,17 @@
         draft.id = 'storyDraft';
         draft.style.marginTop = '14px';
         draft.style.minHeight = '220px';
-        $('stage2').insertBefore(draft, $('stage2').querySelector('.actions'));
+        $('stage1').insertBefore(draft, $('stage1').querySelector('.actions'));
       }
       draft.value = text;
-      draft.oninput = () => { state.story = draft.value; };
+      draft.oninput = () => { state.story = draft.value; updateStoryMeta(draft.value, '', 0); };
       state.story = text;
       $('coverPrompt').value = 'Cinematic cover art for an audio story: ' + text.slice(0,160).replace(/\n/g,' ');
 
-      setStatus($('statusStory'), `Draft ready — ${text.split(/\s+/).length} words.`, 'ok');
-      unlock($('stage3')); unlock($('stage4'));
-      markStepDone(2); markStepActive(3);
+      updateStoryMeta(text, result.provider, result.seed);
+      setStatus($('statusStory'), `Draft ready — ${text.split(/\s+/).filter(Boolean).length} words.`, 'ok');
+      unlock($('stage2')); unlock($('stage3')); unlock($('stage4'));
+      markStepDone(1); markStepActive(2);
     } catch (e) {
       setStatus($('statusStory'), e.message, 'err');
     } finally {
@@ -444,52 +679,29 @@
     }
   });
 
-  // ---------- STAGE 1: VOICE SELECTION ----------
+  /* ── STAGE 2: VOICE ────────────────────────────────────────── */
   function selectVoiceMethod(method) {
-    ['Mic','AI','Browser'].forEach(m => {
+    ['Browser','Mic','Server'].forEach(m => {
       $('btnMethod'+m).classList.toggle('selected', m === method);
       $('panel'+m).classList.toggle('show', m === method);
     });
   }
-  $('btnMethodMic').addEventListener('click', () => selectVoiceMethod('Mic'));
-  $('btnMethodAI').addEventListener('click', () => selectVoiceMethod('AI'));
   $('btnMethodBrowser').addEventListener('click', () => selectVoiceMethod('Browser'));
+  $('btnMethodMic').addEventListener('click', () => selectVoiceMethod('Mic'));
+  $('btnMethodServer').addEventListener('click', () => selectVoiceMethod('Server'));
 
-  // --- Groq PlayAI TTS Handler ---
-  $('btnGenerateGroqVoice').addEventListener('click', async () => {
-    const draft = $('storyDraft');
-    const text = (draft ? draft.value : state.story).trim();
-    if (!text) return setStatus($('statusGroqVoice'), 'Generate or write a story first in step 2.', 'err');
-
-    setStatus($('statusGroqVoice'), 'Generating AI Voice via Groq...', '');
-    $('btnGenerateGroqVoice').disabled = true;
-
-    try {
-      const voice = $('groqVoice').value;
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `TTS API Error: ${res.statusText}`);
-      }
-
-      // Read raw WAV bytes directly from response arrayBuffer
-      const audioBuffer = await res.arrayBuffer();
-      const decoded = await audioCtx.decodeAudioData(audioBuffer);
-      state.narrationBuffer = decoded;
-      finishVoiceCapture(decoded, $('statusGroqVoice'));
-    } catch (e) {
-      setStatus($('statusGroqVoice'), e.message, 'err');
-    } finally {
-      $('btnGenerateGroqVoice').disabled = false;
+  function chunkText(text, maxLen) {
+    const sentences = text.replace(/\s+/g,' ').trim().split(/(?<=[.!?।॥])\s+/);
+    const chunks = []; let cur = '';
+    for (const s of sentences) {
+      if ((cur + ' ' + s).trim().length > maxLen) { if (cur) chunks.push(cur.trim()); cur = s; }
+      else cur = (cur + ' ' + s).trim();
     }
-  });
+    if (cur) chunks.push(cur.trim());
+    return chunks;
+  }
 
-  // --- Browser Speech Handler ---
+  /* Browser voices */
   function populateVoices(){
     const voices = speechSynthesis.getVoices();
     if (!voices.length) return;
@@ -507,17 +719,6 @@
   populateVoices();
   setTimeout(populateVoices, 500);
 
-  function chunkText(text, maxLen) {
-    const sentences = text.replace(/\s+/g,' ').trim().split(/(?<=[.!?।॥])\s+/);
-    const chunks = []; let cur = '';
-    for (const s of sentences) {
-      if ((cur + ' ' + s).trim().length > maxLen) { if (cur) chunks.push(cur.trim()); cur = s; }
-      else cur = (cur + ' ' + s).trim();
-    }
-    if (cur) chunks.push(cur.trim());
-    return chunks;
-  }
-
   function buildUtterances(text, rate){
     const chunks = chunkText(text, 220);
     return chunks.map(c => {
@@ -531,8 +732,7 @@
   }
 
   $('btnPreviewVoice').addEventListener('click', () => {
-    const draft = $('storyDraft');
-    const text = (draft ? draft.value : state.story).slice(0, 300);
+    const text = state.story.slice(0, 300);
     if (!text) return;
     speechSynthesis.cancel();
     const utts = buildUtterances(text, parseFloat($('ttsRate').value));
@@ -540,15 +740,14 @@
   });
 
   $('btnCaptureVoice').addEventListener('click', async () => {
-    const draft = $('storyDraft');
-    const text = (draft ? draft.value : state.story).trim();
+    const text = state.story.trim();
     if (!text) return setStatus($('statusTtsCapture'), 'Generate a story first.', 'err');
     try {
       const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
       const audioTracks = display.getAudioTracks();
       if (!audioTracks.length) {
         display.getTracks().forEach(t=>t.stop());
-        return setStatus($('statusTtsCapture'), 'No tab audio was shared — retry and check "Share tab audio".', 'err');
+        return setStatus($('statusTtsCapture'), 'No tab audio — retry and check "Share tab audio".', 'err');
       }
       display.getVideoTracks().forEach(t => t.stop());
       const audioOnlyStream = new MediaStream(audioTracks);
@@ -574,15 +773,16 @@
       const arrBuf = await blob.arrayBuffer();
       const decoded = await audioCtx.decodeAudioData(arrBuf);
       state.narrationBuffer = decoded;
+      state.narrationBlob = audioBufferToWavBlob(decoded);
       finishVoiceCapture(decoded);
     } catch (e) {
-      setStatus($('statusTtsCapture'), 'Capture cancelled or blocked: ' + e.message, 'err');
+      setStatus($('statusTtsCapture'), 'Capture cancelled: ' + e.message, 'err');
     } finally {
       $('recIndicatorTts').classList.remove('on');
     }
   });
 
-  // --- Mic Recording Handler ---
+  /* Mic recording */
   let micRecorder, micChunks = [], micStream, micTimerInt, micSeconds = 0;
   $('btnRecordMic').addEventListener('click', async () => {
     try {
@@ -616,25 +816,69 @@
     const arrBuf = await blob.arrayBuffer();
     const decoded = await audioCtx.decodeAudioData(arrBuf);
     state.narrationBuffer = decoded;
+    state.narrationBlob = audioBufferToWavBlob(decoded);
     finishVoiceCapture(decoded, $('statusMic'));
+  });
+
+  /* Server AI TTS */
+  $('btnServerTTS').addEventListener('click', async () => {
+    const text = state.story.trim();
+    if (!text) return setStatus($('statusServerTTS'), 'Generate or write a story first.', 'err');
+    $('btnServerTTS').disabled = true;
+    setStatus($('statusServerTTS'), 'Generating narration via server TTS...', '');
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, language: $('language')?.value || 'en' })
+      });
+      if (!res.ok) throw new Error('TTS server error: ' + res.status);
+      const audioBuffer = await res.arrayBuffer();
+      const provider = res.headers.get('X-Audio-Provider') || 'server-tts';
+      const decoded = await audioCtx.decodeAudioData(audioBuffer);
+      state.narrationBuffer = decoded;
+      state.narrationBlob = audioBufferToWavBlob(decoded);
+      finishVoiceCapture(decoded, $('statusServerTTS'));
+      setStatus($('statusServerTTS'), `Narration generated via ${provider}.`, 'ok');
+    } catch (e) {
+      setStatus($('statusServerTTS'), e.message, 'err');
+    } finally {
+      $('btnServerTTS').disabled = false;
+    }
   });
 
   function finishVoiceCapture(buffer, statusEl){
     const wavBlob = audioBufferToWavBlob(buffer);
+    state.narrationBlob = wavBlob;
     $('voicePlayer').src = URL.createObjectURL(wavBlob);
     $('voicePlayer').style.display = 'block';
+
+    // Show audio progress bar
+    $('audioProgressWrap').style.display = 'block';
+    $('voicePlayer').addEventListener('timeupdate', () => {
+      const dur = $('voicePlayer').duration || 1;
+      const cur = $('voicePlayer').currentTime;
+      $('audioProgressFill').style.width = (cur / dur * 100) + '%';
+      $('audioTimeCur').textContent = fmtTime(cur);
+      $('audioTimeTotal').textContent = fmtTime(dur);
+    });
+
     const mins = (buffer.duration/60).toFixed(1);
     setStatus(statusEl || $('statusTtsCapture'), `Narration captured — ${mins} min.`, 'ok');
     unlock($('stage3')); unlock($('stage4')); unlock($('stage5'));
-    markStepDone(1); markStepActive(3);
+    markStepDone(2); markStepActive(3);
+
+    // Set up WAV download
+    $('dlWav').href = URL.createObjectURL(wavBlob);
+    $('dlWav').style.display = 'inline-block';
   }
 
   function audioBufferToWavBlob(buffer) {
     const numFrames = buffer.length;
     const data = buffer.getChannelData(0);
     const dataSize = numFrames * 2;
-    const bufferArr = new ArrayBuffer(44 + dataSize);
-    const view = new DataView(bufferArr);
+    const ab = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(ab);
     const writeStr = (o,s) => { for (let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
     writeStr(0,'RIFF'); view.setUint32(4, 36+dataSize, true); writeStr(8,'WAVE');
     writeStr(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true);
@@ -647,10 +891,10 @@
       view.setInt16(offset, s < 0 ? s*0x8000 : s*0x7FFF, true);
       offset += 2;
     }
-    return new Blob([bufferArr], { type: 'audio/wav' });
+    return new Blob([ab], { type: 'audio/wav' });
   }
 
-  // ---------- STAGE 3: SOUNDSCAPE ----------
+  /* ── STAGE 3: SOUNDSCAPE ───────────────────────────────────── */
   const SOUNDSCAPES = {
     rain:   'Rainthunderandbirds.ogg',
     forest: 'Birds forest.ogg',
@@ -668,18 +912,18 @@
       const filename = SOUNDSCAPES[key];
       const url = 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(filename);
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Could not load that recording (' + res.status + ').');
+      if (!res.ok) throw new Error('Could not load (' + res.status + ').');
       const arrBuf = await res.arrayBuffer();
       const decoded = await audioCtx.decodeAudioData(arrBuf);
       state.soundscapeBuffer = decoded;
       setStatus($('statusSoundscape'), `Loaded — ${decoded.duration.toFixed(0)}s, will loop under your narration.`, 'ok');
       markStepDone(3);
     } catch (e) {
-      setStatus($('statusSoundscape'), 'Load failed (' + e.message + '). Source may be geo/CORS-restricted from your network — try another option.', 'err');
+      setStatus($('statusSoundscape'), 'Load failed (' + e.message + '). Try another option.', 'err');
     }
   });
 
-  // ---------- STAGE 4: COVER ART ----------
+  /* ── STAGE 4: COVER ART ────────────────────────────────────── */
   $('btnCover').addEventListener('click', async () => {
     const prompt = $('coverPrompt').value.trim();
     if (!prompt) return setStatus($('statusCover'), 'Add a cover description.', 'err');
@@ -690,7 +934,7 @@
       const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ', cinematic, warm lighting, high detail cover art')}?width=1024&height=1024&seed=${seed}&nologo=true`;
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      await new Promise((resolve,reject) => { img.onload=resolve; img.onerror=()=>reject(new Error('Image failed — try again.')); img.src=url; });
+      await new Promise((resolve,reject) => { img.onload=resolve; img.onerror=()=>reject(new Error('Image failed.')); img.src=url; });
       state.coverImageEl = img;
       $('coverImg').src = url;
       $('coverPreview').style.display = 'flex';
@@ -703,7 +947,8 @@
     }
   });
 
-  // ---------- STAGE 5: MIX, RENDER, PUBLISH ----------
+  /* ── STAGE 5: MIX, RENDER, EXPORT, SHARE ──────────────────── */
+
   function mixBuffers(narrationBuf, ambienceBuf, gain) {
     const len = narrationBuf.length, sr = narrationBuf.sampleRate;
     const out = audioCtx.createBuffer(1, len, sr);
@@ -785,6 +1030,7 @@
   }
 
   let lastMp3Blob = null, lastVideoBlob = null, lastVideoExt = 'mp4';
+  let lastMixedWavBlob = null;
 
   $('btnAssemble').addEventListener('click', async () => {
     if (!state.narrationBuffer) return setStatus($('statusAssemble'), 'Capture or record narration first.', 'err');
@@ -798,6 +1044,10 @@
       setStatus($('statusAssemble'), 'Encoding MP3...', '');
       lastMp3Blob = encodeMp3(state.mixedBuffer);
       $('dlMp3').href = URL.createObjectURL(lastMp3Blob);
+      $('dlMp3').style.display = 'inline-block';
+
+      // Also store mixed WAV
+      lastMixedWavBlob = audioBufferToWavBlob(state.mixedBuffer);
 
       setStatus($('statusAssemble'), 'Rendering video (real-time)...', '');
       const { blob, mime } = await renderVideo(state.mixedBuffer, state.coverImageEl, $('renderProgress'));
@@ -805,12 +1055,11 @@
       lastVideoExt = mime === 'video/mp4' ? 'mp4' : 'webm';
       $('dlVideo').href = URL.createObjectURL(blob);
       $('dlVideo').setAttribute('download', 'audigram-story.' + lastVideoExt);
-      if (lastVideoExt === 'webm') {
-        $('videoLabel').textContent = 'WEBM — for YouTube';
-        $('videoNote').textContent = 'Your browser recorded WebM — YouTube accepts WebM uploads directly, no conversion needed.';
-      }
 
+      $('exportGrid').style.display = 'grid';
       $('outputGrid').style.display = 'grid';
+      $('shareSection').style.display = 'block';
+
       setStatus($('statusAssemble'), `Done — ${(lastMp3Blob.size/1024/1024).toFixed(1)}MB MP3, ${(blob.size/1024/1024).toFixed(1)}MB video.`, 'ok');
       markStepDone(5);
       burstConfetti();
@@ -821,17 +1070,173 @@
     }
   });
 
-  async function shareBlob(blob, filename, mime, statusMsg){
-    if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, {type: mime})] })) {
-      try {
-        await navigator.share({ files: [new File([blob], filename, {type: mime})], title: 'Audigram story', text: 'Made with Audigram by SHANKH' });
-      } catch(e) { /* user cancelled share sheet */ }
-    } else {
-      alert('Your browser doesn\'t support direct sharing here — use "Save to phone" and share it from your gallery/files app instead.');
+  /* ── PDF EXPORT ────────────────────────────────────────────── */
+  $('btnDownloadPDF').addEventListener('click', () => {
+    const text = state.story.trim();
+    if (!text) return alert('Generate a story first.');
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+      const pageW = 210, margin = 20, contentW = pageW - margin * 2;
+
+      // Title
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Audigram Story', margin, 25);
+
+      // Meta
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120, 120, 120);
+      doc.text(`Generated: ${new Date().toLocaleDateString()} | Words: ${state.storyWordCount} | Provider: ${state.storyProvider}`, margin, 33);
+      doc.setTextColor(0, 0, 0);
+
+      // Divider
+      doc.setDrawColor(200);
+      doc.line(margin, 37, pageW - margin, 37);
+
+      // Body text with word-wrap
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(text, contentW);
+      let y = 45;
+      const lineH = 6;
+      for (const line of lines) {
+        if (y > 275) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += lineH;
+      }
+
+      // Footer
+      const pages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Audigram by SHANKH — Page ${i}/${pages}`, margin, 290);
+      }
+
+      doc.save('audigram-story.pdf');
+    } catch (e) {
+      alert('PDF generation failed: ' + e.message);
     }
+  });
+
+  /* ── SOCIAL SHARING ────────────────────────────────────────── */
+  function getShareText(){
+    const preview = state.story.slice(0, 200).replace(/\n/g, ' ');
+    return `🎧 "${preview}..." — Made with Audigram by SHANKH`;
   }
-  $('btnShareMp3').addEventListener('click', () => { if (lastMp3Blob) shareBlob(lastMp3Blob, 'audigram-story.mp3', 'audio/mp3'); });
-  $('btnShareVideo').addEventListener('click', () => { if (lastVideoBlob) shareBlob(lastVideoBlob, 'audigram-story.'+lastVideoExt, lastVideoExt==='mp4'?'video/mp4':'video/webm'); });
+  function getShareUrl(){
+    return typeof location !== 'undefined' ? location.href : 'https://audigram.vercel.app';
+  }
+
+  // Native Web Share API
+  $('shareNative').addEventListener('click', async () => {
+    if (!navigator.share) return alert('Web Share API not supported on this browser. Use the platform buttons below.');
+    try {
+      const shareData = { title: 'Audigram Story', text: getShareText(), url: getShareUrl() };
+      // If we have an audio blob, include it
+      if (lastMp3Blob && navigator.canShare) {
+        const file = new File([lastMp3Blob], 'audigram-story.mp3', { type: 'audio/mp3' });
+        if (navigator.canShare({ files: [file] })) {
+          shareData.files = [file];
+        }
+      }
+      await navigator.share(shareData);
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('Share failed: ' + e.message);
+    }
+  });
+
+  // WhatsApp
+  $('shareWhatsApp').addEventListener('click', () => {
+    const text = encodeURIComponent(getShareText() + '\n' + getShareUrl());
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  });
+
+  // Telegram
+  $('shareTelegram').addEventListener('click', () => {
+    const text = encodeURIComponent(getShareText());
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+  });
+
+  // Twitter / X
+  $('shareTwitter').addEventListener('click', () => {
+    const text = encodeURIComponent(getShareText().slice(0, 240));
+    const url = encodeURIComponent(getShareUrl());
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  });
+
+  // YouTube preset
+  $('shareYouTube').addEventListener('click', () => {
+    const title = encodeURIComponent(state.story.slice(0, 80).replace(/\n/g, ' ') + ' | Audigram');
+    const desc = encodeURIComponent(
+      state.story.slice(0, 500) + '\n\n🎧 Made with Audigram by SHANKH\n#Audigram #AudioStory #Storytelling'
+    );
+    alert(
+      'YouTube Upload Preset:\n\n' +
+      'Title: ' + decodeURIComponent(title) + '\n\n' +
+      'Description: ' + decodeURIComponent(desc).slice(0, 200) + '...\n\n' +
+      '1. Upload the rendered MP3 + video.\n' +
+      '2. Set category: Entertainment or People & Blogs.\n' +
+      '3. Add tags: audigram, audio story, storytelling\n' +
+      '4. Upload the cover art as thumbnail.\n\n' +
+      'Click OK to open YouTube Studio.'
+    );
+    window.open('https://studio.youtube.com', '_blank');
+  });
+
+  // Reels / TikTok / Shorts preset
+  $('shareReels').addEventListener('click', () => {
+    const caption = encodeURIComponent(
+      state.story.slice(0, 150).replace(/\n/g, ' ') + ' 🎧\n\n#Audigram #AudioStory #Storytelling #Reels #Shorts #TikTok'
+    );
+    alert(
+      'Vertical Video Preset (Reels / TikTok / Shorts):\n\n' +
+      '• Aspect ratio: 9:16 (vertical)\n' +
+      '• Duration: Keep under 60 seconds for Shorts, 90 for Reels\n' +
+      '• Use the rendered video as-is (cover art + audio)\n' +
+      '• Add captions: auto-generated via platform\n\n' +
+      'Caption:\n' + decodeURIComponent(caption).slice(0, 300) + '...\n\n' +
+      'Tip: Trim the first 30-60 seconds of your story for a vertical snippet.'
+    );
+  });
+
+  // Copy link
+  $('shareCopyLink').addEventListener('click', () => {
+    const url = getShareUrl();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link copied to clipboard!');
+      }).catch(() => {
+        prompt('Copy this link:', url);
+      });
+    } else {
+      prompt('Copy this link:', url);
+    }
+  });
+
+  // Share audio file
+  $('shareFile').addEventListener('click', async () => {
+    const blob = lastMp3Blob || state.narrationBlob;
+    if (!blob) return alert('Render the audio first.');
+    if (navigator.canShare) {
+      const file = new File([blob], 'audigram-story.mp3', { type: blob.type || 'audio/mp3' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Audigram Story', text: 'Made with Audigram' });
+        } catch (e) {
+          if (e.name !== 'AbortError') alert('Share failed.');
+        }
+        return;
+      }
+    }
+    alert('File sharing not supported on this browser. Use the Download button instead.');
+  });
 
 })();
 </script>
