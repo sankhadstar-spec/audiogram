@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
-function createSineWavBuffer(text: string): Buffer {
+function createSineWavBuffer(text: string): Uint8Array {
   const sampleRate = 22050;
-  const duration = Math.min(Math.max(text.length * 0.08, 1.5), 6.0); // scale duration to text
+  const duration = Math.min(Math.max(text.length * 0.08, 1.5), 6.0);
   const numSamples = Math.floor(sampleRate * duration);
   const dataSize = numSamples * 2;
   const buffer = Buffer.alloc(44 + dataSize);
@@ -22,15 +22,14 @@ function createSineWavBuffer(text: string): Buffer {
   buffer.write('data', 36);
   buffer.writeUInt32LE(dataSize, 40);
 
-  // Generate a gentle harmonic tone series for narration placeholder
   for (let i = 0; i < numSamples; i++) {
     const t = i / sampleRate;
-    const freq = 220 + Math.sin(t * 8) * 30; // pitch modulation
+    const freq = 220 + Math.sin(t * 8) * 30;
     const sample = Math.floor(Math.sin(2 * Math.PI * freq * t) * 8000);
     buffer.writeInt16LE(sample, 44 + i * 2);
   }
 
-  return buffer;
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 }
 
 export async function POST(req: Request) {
@@ -61,7 +60,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback: return a valid PCM WAV buffer
     const wavBuffer = createSineWavBuffer(text);
     return new NextResponse(wavBuffer, {
       headers: { 'Content-Type': 'audio/wav' }
